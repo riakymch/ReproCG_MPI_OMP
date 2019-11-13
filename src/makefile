@@ -23,8 +23,6 @@
 # ============================================================
 
 CC = mpicxx
-#CFLAGS = -Wall -fopenmp -I. -I${MKLROOT}/include
-#CFLAGS = -std=c++11 -mavx -mfma -fabi-version=0 -Wall -fopenmp -I. -I${MKLROOT}/include -I${HOME}/libs
 CFLAGS = -std=c++11 -mavx -fabi-version=0 -Wall -fopenmp -I. -I${MKLROOT}/include -I${HOME}/libs
 CLFLAGS = -Wall -fopenmp -I. -I${MKLROOT}/include
 
@@ -35,7 +33,6 @@ LIBLIST = -L. -lhbio -lclock -lvector -lm -lc
 LIBLIST = -L. -lhbio -lclock -lm -lc
 LIBLIST = -L. -lsparse -lvector -lclock -lm -lc
 
-#LIBMKL = -L$(MKLROOT)/lib/intel64 $(MKL_FMULTIS_INTEL)
 LIBMKL = -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread
 
 # ============================================================
@@ -83,9 +80,6 @@ CG_MPI_OMP: CG_MPI_OMP.o ToolsMPI.o cg_aux.o matrix.o
 	$(CC) $(CFLAGS) -c $*.c
 
 clean:
-	rm -f *.o CG_MPI_OMP
-
-clear:
 	rm -f *.o *.a CG_MPI_OMP
 
 # ============================================================

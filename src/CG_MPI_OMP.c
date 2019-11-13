@@ -30,7 +30,6 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 	double *res = NULL, *z = NULL, *d = NULL, *y = NULL;
 	double *aux = NULL;
 	double t1, t2, t3, t4;
-	double p1, p2, p3, p4, pp1 = 0.0, pp2 = 0.0;
 #ifdef PRECOND
     int i, *posd = NULL;
     double *diags = NULL;
@@ -46,7 +45,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     double *res_err = NULL, *x_exact = NULL;
 	CreateDoubles (&x_exact, n_dist);
 	CreateDoubles (&res_err, n_dist);
-    InitDoubles(x_exact, n_dist, DONE, DZERO);
+    InitDoubles(x_exact, n_dist, DONE, 0);
 #endif // DIRECT_ERROR 
 
 #ifdef PRECOND
