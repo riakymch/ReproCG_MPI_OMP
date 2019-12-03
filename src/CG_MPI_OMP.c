@@ -81,7 +81,8 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     double reduce[2];
 #ifdef PRECOND
     bblas_ddot(bm, n_dist, res, y, &beta);                              // beta = res' * y
-	tol = ddot (&n_dist, res, &IONE, res, &IONE);                      // beta = res' * res                     
+    bblas_ddot(bm, n_dist, res, res, &tol);                             // tol = res' * res
+	//tol = ddot (&n_dist, res, &IONE, res, &IONE);                      // tol = res' * res                     
     #pragma omp taskwait
 
     reduce[0] = beta;
@@ -151,12 +152,13 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 
 #ifdef PRECOND
         bblas_ddot(bm, n_dist, res, y, &beta);                                    // beta = res' * y  
-		tol = ddot (&n_dist, res, &IONE, res, &IONE);                      // beta = res' * res                     
-
+        bblas_ddot(bm, n_dist, res, res, &tol);                             // tol = res' * res
+		//tol = ddot (&n_dist, res, &IONE, res, &IONE);                      // beta = res' * res                     
+        #pragma omp taskwait
+        
         reduce[0] = beta;
         reduce[1] = tol;
 
-  	    #pragma omp taskwait
 		MPI_Allreduce (MPI_IN_PLACE, reduce, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       
         beta = reduce[0];
@@ -329,7 +331,9 @@ int main (int argc, char **argv) {
         sol2L[i] -= 1.0;
 
     // TODO: why not with OMP tasks?
-	beta = ddot (&dimL, sol2L, &IONE, sol2L, &IONE);
+    bblas_ddot(bm, n_dist, sol2L, sol2L, &beta);                             
+	//beta = ddot (&dimL, sol2L, &IONE, sol2L, &IONE);
+	#pragma omp taskwait
 	MPI_Allreduce (MPI_IN_PLACE, &beta, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 	beta = sqrt(beta);
