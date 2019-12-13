@@ -331,7 +331,7 @@ int main (int argc, char **argv) {
         sol2L[i] -= 1.0;
 
     // TODO: why not with OMP tasks?
-    bblas_ddot(bm, n_dist, sol2L, sol2L, &beta);                             
+    bblas_ddot(bm, dimL, sol2L, sol2L, &beta);                             
 	//beta = ddot (&dimL, sol2L, &IONE, sol2L, &IONE);
 	#pragma omp taskwait
 	MPI_Allreduce (MPI_IN_PLACE, &beta, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
