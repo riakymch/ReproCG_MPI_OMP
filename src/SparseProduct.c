@@ -288,7 +288,7 @@ void __t_spmv (int bm, int m, int initRes, SparseMatrix spr, int index, double *
 	  	// The dot product between the row i and the vector vec is computed
 		  aux = 0.0;
 		  for (j=pp1[i]; j<pp1[i+1]; j++)
-			  aux += pd1[j] * pvec[pi1[j]];
+			  aux = fma(pd1[j], pvec[pi1[j]], aux);
 		  // Accumulate the obtained value on the result
 		  res[i] += aux; 
 	}

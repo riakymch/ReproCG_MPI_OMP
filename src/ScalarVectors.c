@@ -122,7 +122,9 @@ void VvecDoubles (double alfa, double *src1, double *src2, double beta, double *
 	int i;
 
 	for (i=0; i<dim; i++) { 
-		*dst = (beta * *dst) + (alfa * *(src1++) * *(src2++)); dst++; 
+        double tmp = alfa * *(src1++) * *(src2++);
+        *dst = fma(beta, *dst, tmp);
+        dst++; 
 	}
 }
 
