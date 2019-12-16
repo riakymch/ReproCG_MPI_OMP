@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 /// #include "InputOutput.h"
 #include "ScalarVectors.h"
 #include "hb_io.h"
