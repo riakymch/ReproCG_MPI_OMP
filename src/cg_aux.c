@@ -1,4 +1,9 @@
+
+#include "exblas/exdot.hpp"
+
 #include "cg_aux.h"
+
+#define NBFPE 8
 
 //static inline void __attribute__((always_inline)) bblas_dcopy(int bm, int m, double *X, double *Y) 
 void bblas_dcopy(int bm, int m, double *X, double *Y) 
@@ -87,10 +92,11 @@ void __t_dot(int bm, int m, double *x, double *y, int initx, int inity, double *
 	double *Y = &y[inity];
 	int i_one = 1;
 	double local_result;
-	local_result = BLAS_dot(bm, X, i_one, Y, i_one);
+    exblas::cpu::exdot<double*, double*, NBFPE> (bm, X, Y, result);
+    //local_result = BLAS_dot(bm, X, i_one, Y, i_one);
 
-	#pragma omp atomic //critical
-	  *result += local_result;
+	//#pragma omp atomic //critical
+	//  *result += local_result;
 }
 
 
