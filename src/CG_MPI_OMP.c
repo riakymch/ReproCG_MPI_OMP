@@ -23,56 +23,6 @@
 #define DIRECT_ERROR 0
 #define PRECOND 1
 #define VECTOR_OUTPUT 0
-#define NBFPE 8
-
-/* 
- * operation to reduce fpes 
- */ 
-void fpeSum( double *in, double *inout, int *len, MPI_Datatype *dptr ) { 
-
-    double s;
-    for (int j = 0; j < *len; ++j) { 
-        if (in[j] == 0.0)
-            return;
-
-        for (int i = 0; i < *len; ++i) { 
-            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
-            in[j] = s;
-            if(true && !(in[j] != 0))
-                break;
-        }
-    }
-}
-
-void fpeSum2( double *in, double *inout, int *len, MPI_Datatype *dptr ) { 
-
-    double s;
-    // for the first fpe
-    for (int j = 0; j < NBFPE; ++j) { 
-        if (in[j] == 0.0)
-            break;
-
-        for (int i = 0; i < NBFPE; ++i) { 
-            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
-            in[j] = s;
-            if(true && !(in[j] != 0))
-                break;
-        }
-    }
-
-    // for the second fpe
-    for (int j = NBFPE; j < *len; ++j) { 
-        if (in[j] == 0.0)
-            return;
-
-        for (int i = NBFPE; i < *len; ++i) { 
-            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
-            in[j] = s;
-            if(true && !(in[j] != 0))
-                break;
-        }
-    }
-}
 
 void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int *dspls, int myId, int bm) {
 	int size = mat.dim2, sizeR = mat.dim1; 
@@ -131,8 +81,8 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #endif
     bblas_dcopy(bm, n_dist, y, d);                                      // d = y
 
-    std::vector<double> fpe(2*NBFPE);
-    std::vector<double> fpe_tol(NBFPE);
+    std::vector<double> fpe(2*NBFPE, 0.0);
+    std::vector<double> fpe_tol(NBFPE, 0.0);
     double vAux[2];
 
     // user-defined reduction operations
@@ -226,6 +176,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
             printf ("%d \t %20.10e \n", iter, tol);
 #endif // DIRECT_ERROR
 
+        fpe = std::vector<double>(NBFPE, 0.0);
         bblas_ddot(bm, n_dist, res, y, &fpe[0]);
         #pragma omp taskwait
 
@@ -255,6 +206,8 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 		alpha = beta;                                                 		        // alpha = beta
 
 #ifdef PRECOND
+        fpe = std::vector<double>(2*NBFPE, 0.0);
+        fpe_tol = std::vector<double>(NBFPE, 0.0);
         bblas_ddot(bm, n_dist, res, y, &fpe[0]);                              // beta = res' * y
         bblas_ddot(bm, n_dist, res, res, &fpe_tol[0]);                             // tol = res' * res
         #pragma omp taskwait
@@ -286,6 +239,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 
 		tol = sqrt (tol);                              									// tol = norm (res)
 #else
+        fpe = std::vector<double>(NBFPE, 0.0);
         bblas_ddot(bm, n_dist, res, y, &fpe[0]);                              // beta = res' * y
         #pragma omp taskwait
 
@@ -468,7 +422,7 @@ int main (int argc, char **argv) {
 	for (i=0; i<dimL; i++)
         sol2L[i] -= 1.0;
 
-    std::vector<double> fpe(NBFPE);
+    std::vector<double> fpe(NBFPE, 0.0);
     bblas_ddot(bm, dimL, sol2L, sol2L, &fpe[0]);
 	#pragma omp taskwait
 

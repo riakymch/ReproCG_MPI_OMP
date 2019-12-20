@@ -1,9 +1,77 @@
 
+#include <vector>
 #include "exblas/exdot.hpp"
 
 #include "cg_aux.h"
 
-#define NBFPE 8
+/* 
+ * operation to reduce fpes 
+ */ 
+void fpeSum_omp( double *in, double *inout) { 
+
+    double s;
+    for (int j = 0; j < NBFPE; ++j) { 
+        if (in[j] == 0.0)
+            return;
+
+        for (int i = 0; i < NBFPE; ++i) { 
+            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
+            in[j] = s;
+            if(true && !(in[j] != 0))
+                break;
+        }
+    }
+}
+
+#pragma omp declare reduction(redFPE: double*: \
+            fpeSum_omp(omp_in, omp_out))
+            //initializer (omp_priv=(double*)calloc(NBFPE, sizeof(double)))
+
+void fpeSum( double *in, double *inout, int *len, MPI_Datatype *dptr ) { 
+
+    double s;
+    for (int j = 0; j < *len; ++j) { 
+        if (in[j] == 0.0)
+            return;
+
+        for (int i = 0; i < *len; ++i) { 
+            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
+            in[j] = s;
+            if(true && !(in[j] != 0))
+                break;
+        }
+    }
+}
+
+void fpeSum2( double *in, double *inout, int *len, MPI_Datatype *dptr ) { 
+
+    double s;
+    // for the first fpe
+    for (int j = 0; j < NBFPE; ++j) { 
+        if (in[j] == 0.0)
+            break;
+
+        for (int i = 0; i < NBFPE; ++i) { 
+            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
+            in[j] = s;
+            if(true && !(in[j] != 0))
+                break;
+        }
+    }
+
+    // for the second fpe
+    for (int j = NBFPE; j < *len; ++j) { 
+        if (in[j] == 0.0)
+            return;
+
+        for (int i = NBFPE; i < *len; ++i) { 
+            inout[i] = exblas::cpu::FMA2Sum(inout[i], in[j], s);
+            in[j] = s;
+            if(true && !(in[j] != 0))
+                break;
+        }
+    }
+}
 
 //static inline void __attribute__((always_inline)) bblas_dcopy(int bm, int m, double *X, double *Y) 
 void bblas_dcopy(int bm, int m, double *X, double *Y) 
@@ -26,6 +94,7 @@ void bblas_ddot(int bm, int m, double *X, double *Y, double *result)
 	for ( i=0; i<m; i+=bm ) {
 		int cs = m - i;
 		int c = cs < bm ? cs : bm;
+        //#pragma omp parallel reduction(redFPE:result)
 		#pragma omp task depend(in:X[i:i+c-1], Y[i:i+c-1]) depend(out:result) firstprivate(i,c,m) //private(result)
 		  __t_dot(c, m, X, Y, i, i, result);
 	}
@@ -90,13 +159,12 @@ void __t_dot(int bm, int m, double *x, double *y, int initx, int inity, double *
 {
 	double *X = &x[initx];
 	double *Y = &y[inity];
-	int i_one = 1;
-	double local_result;
-    exblas::cpu::exdot<double*, double*, NBFPE> (bm, X, Y, result);
-    //local_result = BLAS_dot(bm, X, i_one, Y, i_one);
+    std::vector<double> local_result(NBFPE, 0.0);
 
-	//#pragma omp atomic //critical
-	//  *result += local_result;
+    exblas::cpu::exdot<double*, double*, NBFPE> (bm, X, Y, &local_result[0]);
+
+	#pragma omp critical
+        fpeSum_omp(&local_result[0], &result[0]);
 }
 
 
