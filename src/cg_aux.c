@@ -89,7 +89,6 @@ void bblas_dcopy(int bm, int m, double *X, double *Y)
 //static inline void __attribute__((always_inline)) bblas_ddot(int bm, int m, double *X, double *Y, double *result) 
 void bblas_ddot(int bm, int m, double *X, double *Y, double *result) 
 {
-	*result = 0; //M
 	int i;
 	for ( i=0; i<m; i+=bm ) {
 		int cs = m - i;
@@ -159,12 +158,13 @@ void __t_dot(int bm, int m, double *x, double *y, int initx, int inity, double *
 {
 	double *X = &x[initx];
 	double *Y = &y[inity];
+
     std::vector<double> local_result(NBFPE, 0.0);
 
     exblas::cpu::exdot<double*, double*, NBFPE> (bm, X, Y, &local_result[0]);
 
 	#pragma omp critical
-        fpeSum_omp(&local_result[0], &result[0]);
+    fpeSum_omp(&local_result[0], &result[0]);
 }
 
 

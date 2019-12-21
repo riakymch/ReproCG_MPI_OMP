@@ -23,7 +23,6 @@
 #include <iostream>
 
 #include "accumulate.h"
-//#include "fpexpansionvect.hpp"
 
 namespace exblas{
 ///@cond
@@ -209,9 +208,6 @@ template<class PointerOrValue1, class PointerOrValue2, size_t NBFPE=8>
 void exdot(unsigned size, PointerOrValue1 x1_ptr, PointerOrValue2 x2_ptr, double* fpe){
     static_assert( has_floating_value<PointerOrValue1>::value, "PointerOrValue1 needs to be T or T* with T one of (const) float or (const) double");
     static_assert( has_floating_value<PointerOrValue2>::value, "PointerOrValue2 needs to be T or T* with T one of (const) float or (const) double");
-
-//    for( int i=0; i<NBFPE; i++)
-//        fpe[i] = 0;
 
 #ifndef _WITHOUT_VCL
     cpu::ExDOTFPE<cpu::FPExpansionVect<vcl::Vec8d, NBFPE, cpu::FPExpansionTraits<true> > >((int)size,x1_ptr,x2_ptr, NBFPE, fpe);

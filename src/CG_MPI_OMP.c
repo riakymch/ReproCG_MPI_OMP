@@ -116,6 +116,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
         vAux[1] = exblas::cpu::Round<double, NBFPE> (&fpe_tol[0]);
     }
     MPI_Bcast(vAux, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
     beta = vAux[0];
     tol  = vAux[1];
     // ReproAllReduce -- End
@@ -177,7 +178,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #endif // DIRECT_ERROR
 
         fpe = std::vector<double>(NBFPE, 0.0);
-        bblas_ddot(bm, n_dist, res, y, &fpe[0]);
+        bblas_ddot(bm, n_dist, d, z, &fpe[0]);
         #pragma omp taskwait
 
         // ReproAllReduce -- Begin
@@ -233,6 +234,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
             vAux[1] = exblas::cpu::Round<double, NBFPE> (&fpe_tol[0]);
         }
         MPI_Bcast(vAux, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
         beta = vAux[0];
         tol  = vAux[1];
         // ReproAllReduce -- End
