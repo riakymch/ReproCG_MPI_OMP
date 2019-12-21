@@ -51,9 +51,6 @@ extern void ProdSparseMatrixVectorByRows (SparseMatrix spr, int index, double *v
 // The parameter index indicates if 0-indexing or 1-indexing is used,
 extern void ProdSparseMatrixVectorByRows_OMP (SparseMatrix spr, int index, double *vec, double *res);
 
-extern void ProdSparseMatrixVectorByRows_OMPTasks (SparseMatrix spr, int index, double *vec, double *res, int bm);
-
-
 /*********************************************************************************/
 
 // This routine computes the product { res += spr * vec }.

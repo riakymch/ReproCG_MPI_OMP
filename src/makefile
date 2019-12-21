@@ -1,6 +1,6 @@
-# ============================================================
-# INTEL COMPILERS
-# ============================================================
+## ============================================================
+## INTEL COMPILERS
+## ============================================================
 #
 #CC = mpicc
 #CFLAGS = -Wall -g -openmp -I.  -I${MKLROOT}/include
@@ -23,15 +23,15 @@
 # ============================================================
 
 CC = mpicxx
-CFLAGS = -std=c++11 -mavx -fabi-version=0 -Wall -fopenmp -I. -I${MKLROOT}/include -I${HOME}/libs
-CLFLAGS = -Wall -fopenmp -I. -I${MKLROOT}/include
+CFLAGS = -std=c++11 -mavx -fabi-version=0 -Wall -fopenmp -I. -I${MKLROOT}/include -I${HOME}/libs -I${GMP_HOME}/include -I${MPFR_HOME}/include 
+CLFLAGS = -Wall -fopenmp -I. -I${MKLROOT}/include -I${GMP_HOME}/include -I${MPFR_HOME}/include
 
 CLINKER = mpicxx
 LDFLAGS = -fopenmp
 LIBLIST = -L. -lhbio -lclock -lsparsenew -lvector -lm -lc
 LIBLIST = -L. -lhbio -lclock -lvector -lm -lc
 LIBLIST = -L. -lhbio -lclock -lm -lc
-LIBLIST = -L. -lsparse -lvector -lclock -lm -lc
+LIBLIST = -L. -lsparse -lvector -lclock -lm -lc -L${GMP_HOME}/lib -L${MPFR_HOME}/lib -lmpfr -lgmp
 
 LIBMKL = -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread
 
@@ -52,7 +52,7 @@ OBJS = $(OBJS_CLOCK) $(OBJS_VECTOR) $(OBJS_SPARSE)
 
 # ============================================================
 
-default: libclock.a libvector.a libsparse.a CG_MPI_OMP
+default: libclock.a libvector.a libsparse.a CG_MPI
 
 libshared.a : $(OBJS)
 	$(AR) $(ARFLAGS) $@ $?
@@ -70,8 +70,8 @@ libsparse.a : $(OBJS_SPARSE)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RL) $(RLFLAGS) $@
 
-CG_MPI_OMP: CG_MPI_OMP.o ToolsMPI.o cg_aux.o matrix.o
-	$(CLINKER) $(LDFLAGS) -o CG_MPI_OMP CG_MPI_OMP.o ToolsMPI.o cg_aux.o matrix.o $(LIBMKL) $(LIBLIST)
+CG_MPI: CG_MPI.o ToolsMPI.o matrix.o 
+	$(CLINKER) $(LDFLAGS) -o CG_MPI CG_MPI.o ToolsMPI.o matrix.o $(LIBMKL) $(LIBLIST)
 
 # ============================================================
 
@@ -80,6 +80,6 @@ CG_MPI_OMP: CG_MPI_OMP.o ToolsMPI.o cg_aux.o matrix.o
 	$(CC) $(CFLAGS) -c $*.c
 
 clean:
-	rm -f *.o *.a CG_MPI_OMP
+	rm -f *.o *.a CG_MPI
 
 # ============================================================

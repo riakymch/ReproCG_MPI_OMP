@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 /// #include "InputOutput.h"
 #include "ScalarVectors.h"
 #include "hb_io.h"
@@ -203,7 +205,7 @@ void ProdSparseMatrixVectorByRows (SparseMatrix spr, int index, double *vec, dou
 		// The dot product between the row i and the vector vec is computed
 		aux = 0.0;
 		for (j=pp1[i]; j<pp1[i+1]; j++)
-			aux += pd1[j] * pvec[pi1[j]];
+			aux = fma(pd1[j], pvec[pi1[j]], aux);
 		// Accumulate the obtained value on the result
 		res[i] += aux; 
 	}
@@ -230,17 +232,17 @@ void ProdSparseMatrixVectorByRows_OMP (SparseMatrix spr, int index, double *vec,
 }
 
 /*void ProdSparseMatrixVectorByRows_OMPTasks (SparseMatrix spr, int index, double *vec, double *res, int bm) {
-	int dim = spr.dim1;
+	int i, dim = spr.dim1;
 
 	// Process all the rows of the matrix
 	//#pragma omp taskloop grainsize(bm) 
-	for (int i=0; i<dim; i+=bm) {
+	for ( i=0; i<dim; i+=bm) {
 		int cs = dim - i;
 		int c = cs < bm ? cs : bm;
 //	for (i=0; i<dim; i++) {
-	  #pragma omp task depend(inout:res[i:i+c-1]) shared(i,c)
+	  #pragma omp task depend(inout:res[i:i+c-1]) //shared(c)
 		{
-	    printf("Task SPMV ---- i: %d, c: %d \n", i, c);
+//	printf("Task SPMV ---- i: %d, c: %d \n", i, c);
 		  int *pp1 = spr.vptr, *pi1 = spr.vpos + *pp1 - index;
 	    double aux, *pvec = vec + *pp1 - index;
 	    double *pd1 = spr.vval + *pp1 - index;
@@ -255,17 +257,17 @@ void ProdSparseMatrixVectorByRows_OMP (SparseMatrix spr, int index, double *vec,
 	  	}
 		}
 	}
-}*/
+}
+*/
 
-
-/*void ProdSparseMatrixVectorByRows_OMPTasks (SparseMatrix spr, int index, double *vec, double *res, int bm) {
-	int i, j, idx, dim = spr.dim1;
+void ProdSparseMatrixVectorByRows_OMPTasks (SparseMatrix spr, int index, double *vec, double *res, int bm) {
+	int i, j, dim = spr.dim1;
 	int *pp1 = spr.vptr, *pi1 = spr.vpos + *pp1 - index;
 	double aux, *pvec = vec + *pp1 - index;
 	double *pd1 = spr.vval + *pp1 - index;
 
 	// Process all the rows of the matrix
-	#pragma omp taskloop grainsize(bm) depend(out:res[i]) 
+	#pragma omp taskloop grainsize(bm) 
 	for ( i=0; i<dim; i++ ) {
 	  	// The dot product between the row i and the vector vec is computed
 		  aux = 0.0;
@@ -273,35 +275,6 @@ void ProdSparseMatrixVectorByRows_OMP (SparseMatrix spr, int index, double *vec,
 			  aux += pd1[j] * pvec[pi1[j]];
 		  // Accumulate the obtained value on the result
 		  res[i] += aux; 
-	}
-}*/
-
-void __t_spmv (int bm, int m, int initRes, SparseMatrix spr, int index, double *vec, double *res)
-{
-//	double *R = &res[initRes];
-	int i, j;
-	int *pp1 = spr.vptr, *pi1 = spr.vpos + *pp1 - index;
-	double aux, *pvec = vec + *pp1 - index;
-	double *pd1 = spr.vval + *pp1 - index;
-  	//printf("Task SPMV initRes: %d, bm: %d, dim: %d\n", initRes, bm, dim);
-	for ( i=initRes; i<initRes+bm; i++ ) {
-	  	// The dot product between the row i and the vector vec is computed
-		  aux = 0.0;
-		  for (j=pp1[i]; j<pp1[i+1]; j++)
-			  aux += pd1[j] * pvec[pi1[j]];
-		  // Accumulate the obtained value on the result
-		  res[i] += aux; 
-	}
-}
-
-void ProdSparseMatrixVectorByRows_OMPTasks(SparseMatrix spr, int index, double *vec, double *res, int bm) 
-{
-	int i, m=spr.dim1;
-	for ( i=0; i<m; i+=bm) {
-		int cs = m - i;
-		int c = cs < bm ? cs : bm;
-		#pragma omp task depend(inout:res[i:i+c-1]) firstprivate(i, c, m, index) 
-		__t_spmv(c, m, i, spr, index, vec, res);  
 	}
 }
 

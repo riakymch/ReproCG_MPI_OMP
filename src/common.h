@@ -2,6 +2,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <math.h>
+
 double norm_inf(int n_dist, double *res_err) {
     double nrm = 0.0;
 

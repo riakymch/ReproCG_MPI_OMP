@@ -127,5 +127,4 @@ void VvecDoubles (double alfa, double *src1, double *src2, double beta, double *
 }
 
 
-
 /*********************************************************************************/
