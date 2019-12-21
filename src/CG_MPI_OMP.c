@@ -17,7 +17,7 @@
 
 // ================================================================================
 
-#define DIRECT_ERROR 0
+#define DIRECT_ERROR 1
 #define PRECOND 1
 #define VECTOR_OUTPUT 0
 
@@ -30,7 +30,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 	double *res = NULL, *z = NULL, *d = NULL, *y = NULL;
 	double *aux = NULL;
 	double t1, t2, t3, t4;
-#ifdef PRECOND
+#if PRECOND
     int i, *posd = NULL;
     double *diags = NULL;
 #endif
@@ -48,7 +48,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     InitDoubles(x_exact, n_dist, DONE, 0);
 #endif // DIRECT_ERROR 
 
-#ifdef PRECOND
+#if PRECOND
     CreateDoubles (&y, n_dist);
     CreateInts (&posd, n_dist);
     CreateDoubles (&diags, n_dist);
@@ -71,7 +71,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 	ProdSparseMatrixVectorByRows_OMPTasks (mat, 0, aux, z, bm);         // z = A * x
     bblas_dcopy(bm, n_dist, b, res);																		// res = b
 	bblas_daxpy(bm, n_dist, DMONE, z, res);                             // res -= z
-#ifdef PRECOND
+#if PRECOND
     VvecDoublesTasks(bm, n_dist, diags, res, y); 											// y = D^-1 * res
 #else
 	y = res;																														// y = res
@@ -79,7 +79,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     bblas_dcopy(bm, n_dist, y, d);                                      // d = y
 
     double reduce[2];
-#ifdef PRECOND
+#if PRECOND
     bblas_ddot(bm, n_dist, res, y, &beta);                              // beta = res' * y
     bblas_ddot(bm, n_dist, res, res, &tol);                             // tol = res' * res
 	//tol = ddot (&n_dist, res, &IONE, res, &IONE);                      // tol = res' * res                     
@@ -134,7 +134,8 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
             printf ("%d \t %a \t %a \n", iter, tol, direct_err);
 #else        
 		if (myId == 0) 
-            printf ("%d \t %20.10e \n", iter, tol);
+            printf ("%d \t %a \n", iter, tol);
+            //printf ("%d \t %20.10e \n", iter, tol);
 #endif // DIRECT_ERROR
 
         bblas_ddot(bm, n_dist, d, z, &rho);
@@ -146,14 +147,14 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 		rho = -rho;
 		bblas_daxpy(bm, n_dist, rho, z, res);                                     // res -= rho * z
   	    #pragma omp taskwait
-#ifdef PRECOND
+#if PRECOND
         VvecDoublesTasks(bm, n_dist, diags, res, y);                               // y = D^-1 * res
 #else
 		y = res;
 #endif
 		alpha = beta;                                                 		        // alpha = beta
 
-#ifdef PRECOND
+#if PRECOND
         bblas_ddot(bm, n_dist, res, y, &beta);                                    // beta = res' * y  
         bblas_ddot(bm, n_dist, res, res, &tol);                             // tol = res' * res
 		//tol = ddot (&n_dist, res, &IONE, res, &IONE);                      // beta = res' * res                     
@@ -178,7 +179,6 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 
 #if DIRECT_ERROR
         // compute direct error
-        double direct_err;
         bblas_dcopy(bm, n_dist, x_exact, res_err);								// res_err = x_exact
         bblas_daxpy(bm, n_dist, DMONE, x, res_err);                             // res_err -= x;
         #pragma omp taskwait
@@ -210,7 +210,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     }
 
 	RemoveDoubles (&aux); RemoveDoubles (&res); RemoveDoubles (&z); RemoveDoubles (&d);
-#ifdef PRECOND
+#if PRECOND
 	RemoveDoubles(&y);
     RemoveDoubles (&diags); RemoveInts (&posd); 
 #endif
