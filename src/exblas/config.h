@@ -12,8 +12,6 @@
 #include <cassert>
 ////////////////////////////////////////////////////////////////////////
 //nvcc does not compile the avx512 instruction set, so do not include it
-// TODO: temporarily included this as we work with the fpe only version
-#define _WITHOUT_VCL
 #ifdef __NVCC__
 #define _WITHOUT_VCL
 #endif//__NVCC__

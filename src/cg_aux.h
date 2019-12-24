@@ -27,13 +27,6 @@
 #define BLAS_axpy(n, da, dx, incx, dy, incy) 				cblas_daxpy(n, da, dx, incx, dy, incy)
 #define BLAS_scal(n, da, dx, incx) 				        cblas_dscal(n, da, dx, incx)
 
-/* 
- * operation to reduce fpes 
- */ 
-void fpeSum_omp( double *in, double *inout, int *len );
-void fpeSum( double *in, double *inout, int *len, MPI_Datatype *dptr );
-void fpeSum2( double *in, double *inout, int *len, MPI_Datatype *dptr );
-
 
 void bblas_dcopy(int bm, int m, double *X, double *Y);
 void bblas_ddot(int bm, int m, double *X, double *Y, double *result);

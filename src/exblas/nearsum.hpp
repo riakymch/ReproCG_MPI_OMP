@@ -7,8 +7,6 @@
 // http://www.ti3.tu-harburg.de/paper/rump/RuOgOi06.pdf
 // =========================================
 
-#pragma once
-
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 __inline__
