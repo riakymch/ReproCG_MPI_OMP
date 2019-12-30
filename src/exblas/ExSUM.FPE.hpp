@@ -57,37 +57,25 @@ struct FPExpansionVect
 
     /**
      * This function accumulates value x to the floating-point expansion
+     * \param a fpe
      * \param x input value
      */
-    void Accumulate(T x);
-
-    ////**
-    // * This function accumulates two values x to the floating-point expansion
-    // * \param x1 input value
-    // * \param x2 input value
-    // */
-    //void Accumulate(T x1, T x2);
+    void Accumulate(T *a, T x);
 
     /**
      * This function is used to flush the floating-point expansion to the superaccumulator
+     * \param a fpe
      */
-    void Flush();
+    void Flush(T *a);
 
 private:
     void FlushVector(T x) const;
-    void Insert(T & x);
-    void Insert(T & x1, T & x2);
     static void Swap(T & x1, T & x2);
     static T twosum(T a, T b, T & s);
 
     int64_t* superacc;
 
     // Most significant digits first!
-#ifdef _MSC_VER
-	_declspec(align(64)) T a[N];
-#else
-    T a[N] __attribute__((aligned(64)));
-#endif
     T victim;
 };
 
@@ -96,7 +84,7 @@ FPExpansionVect<T,N,TRAITS>::FPExpansionVect(int64_t * sa) :
     superacc(sa),
     victim(0)
 {
-    std::fill(a, a + N, 0);
+//    std::fill(a, a + N, 0);
 }
 
 // Knuth 2Sum.
@@ -137,20 +125,21 @@ inline static T FMA2Sum(T a, T b, T & s)
 }
 
 template<typename T, int N, typename TRAITS> UNROLL_ATTRIBUTE
-void FPExpansionVect<T,N,TRAITS>::Accumulate(T x)
+void FPExpansionVect<T,N,TRAITS>::Accumulate(T *fpe, T x)
 {
     // Experimental
-    if(TRAITS::CheckRangeFirst && horizontal_or(abs(x) < abs(a[N-1]))) {
+    if(TRAITS::CheckRangeFirst && horizontal_or(abs(x) < abs(fpe[N-1]))) {
         FlushVector(x);
         return;
     }
     T s;
     for(unsigned int i = 0; i != N; ++i) {
-        a[i] = twosum(a[i], x, s);
+        fpe[i] = twosum(fpe[i], x, s);
         x = s;
-        if(TRAITS::EarlyExit && !horizontal_or(x)) return;
+        if(TRAITS::EarlyExit && !horizontal_or(x))
+            return;
     }
-    if(TRAITS::EarlyExit || horizontal_or(x)) {
+    if(horizontal_or(x)) {
         FlushVector(x);
     }
 }
@@ -171,83 +160,12 @@ T FPExpansionVect<T,N,TRAITS>::twosum(T a, T b, T & s)
 //#endif
 }
 
-template<typename T, int N, typename TRAITS>
-void FPExpansionVect<T,N,TRAITS>::Swap(T & x1, T & x2)
-{
-    //if(TRAITS::ConditionalSwap) {
-    //    swap_if_nonzero(x1, x2);
-    //}
-    //else {
-        std::swap(x1, x2);
-    //}
-}
-
-template<typename T, int N, typename TRAITS> UNROLL_ATTRIBUTE
-void FPExpansionVect<T,N,TRAITS>::Insert(T & x)
-{
-    if(TRAITS::Sort) {
-        // Insert at tail. Unconditional version.
-        // Rotate accumulators:
-        // x <= a[0]
-        // a[0] <= a[1]
-        // a[1] <= a[2]
-        // ...
-        // a[N-2] <= a[N-1]
-        // a[N-1] <= x
-        //T xb = a[0];
-        T xb = T().load_a((double*)&a[0]);
-        for(int i = 0; i != N-1; ++i)
-        {
-            //a[i] = a[i+1];
-            T v;
-            v.load_a((double*)&a[i+1]);
-            v.store_a((double*)&a[i]);
-        }
-        //a[N-1] = x;
-        x.store_a((double*)&a[N-1]);
-        x = xb;
-    }
-    else {
-        // Insert at head
-        // Conditional or unconditional
-        Swap(x, a[0]);
-    }
-}
-
-template<typename T, int N, typename TRAITS> UNROLL_ATTRIBUTE
-void FPExpansionVect<T,N,TRAITS>::Insert(T & x1, T & x2)
-{
-    if(TRAITS::Sort) {
-        // x1 <= a[0]
-        // x2 <= a[1]
-        // a[0] <= a[2]
-        // a[1] <= a[3]
-        // a[i] <= a[i+2]
-        // a[N-3] <= a[N-1]
-        // a[N-2] <= x1
-        // a[N-1] <= x2
-        T x1b = a[0];
-        T x2b = a[1];
-        for(int i = 0; i != N-2; ++i) {
-            a[i] = a[i+2];
-        }
-        a[N-2] = x1;
-        a[N-1] = x2;
-        x1 = x1b;
-        x2 = x2b;
-    }
-    else {
-        Swap(x1, a[0]);
-        Swap(x2, a[1]);
-    }
-}
-
 #undef IACA
 #undef IACA_START
 #undef IACA_END
 
 template<typename T, int N, typename TRAITS>
-void FPExpansionVect<T,N,TRAITS>::Flush()
+void FPExpansionVect<T,N,TRAITS>::Flush(T *a)
 {
     for(unsigned int i = 0; i != N; ++i)
     {
@@ -264,6 +182,7 @@ void FPExpansionVect<T,N,TRAITS>::FlushVector(T x) const
 {
     // TODO: update status, handle Inf/Overflow/NaN cases
     // TODO: make it work for other values of 4
+    #pragma omp critical
     exblas::cpu::Accumulate(superacc, x);
 }
 

@@ -86,14 +86,14 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 
 #if PRECOND
     // beta = res' * y 
-    exblas::cpu::exdot (n_dist, res, y, &h_superacc[0]);
+    exblas::cpu::exdot (bm, n_dist, res, y, &h_superacc[0]);
     // ReproAllReduce -- Begin
     int imin=exblas::IMIN, imax=exblas::IMAX;
     exblas::cpu::Normalize(&h_superacc[0], imin, imax);
 
     // compute tolerance
     //     tol = res' * res
-    exblas::cpu::exdot (n_dist, res, res, &h_superacc_tol[0]);
+    exblas::cpu::exdot (bm, n_dist, res, res, &h_superacc_tol[0]);
     imin=exblas::IMIN, imax=exblas::IMAX;
     exblas::cpu::Normalize(&h_superacc_tol[0], imin, imax);
 
@@ -117,13 +117,13 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     }
     MPI_Bcast(vAux, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     beta = vAux[0]; 
-    tol  = vAux[1]; 
+    tol  = vAux[1];
     // ReproAllReduce -- End
 
 	tol = sqrt (tol);                              									// tol = norm (res)
 #else
     // beta = res' * y
-    exblas::cpu::exdot (n_dist, res, y, &h_superacc[0]);
+    exblas::cpu::exdot (bm, n_dist, res, y, &h_superacc[0]);
     // ReproAllReduce -- Begin
     int imin=exblas::IMIN, imax=exblas::IMAX;
     exblas::cpu::Normalize(&h_superacc[0], imin, imax);
@@ -178,7 +178,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #endif // DIRECT_ERROR
 
         // ReproAllReduce -- Begin
-        exblas::cpu::exdot (n_dist, d, z, &h_superacc[0]);
+        exblas::cpu::exdot (bm, n_dist, d, z, &h_superacc[0]);
         imin=exblas::IMIN, imax=exblas::IMAX;
         exblas::cpu::Normalize(&h_superacc[0], imin, imax);
         if (myId == 0) {
@@ -207,13 +207,13 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #if PRECOND
         // ReproAllReduce -- Begin
         // beta = res' * y 
-        exblas::cpu::exdot (n_dist, res, y, &h_superacc[0]);
+        exblas::cpu::exdot (bm, n_dist, res, y, &h_superacc[0]);
         imin=exblas::IMIN, imax=exblas::IMAX;
         exblas::cpu::Normalize(&h_superacc[0], imin, imax);
 
         // compute tolerance
         //     tol = res' * res
-        exblas::cpu::exdot (n_dist, res, res, &h_superacc_tol[0]);
+        exblas::cpu::exdot (bm, n_dist, res, res, &h_superacc_tol[0]);
         imin=exblas::IMIN, imax=exblas::IMAX;
         exblas::cpu::Normalize(&h_superacc_tol[0], imin, imax);
 
@@ -244,7 +244,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #else
         // beta = res' * y 
         // ReproAllReduce -- Begin
-        exblas::cpu::exdot (n_dist, res, y, &h_superacc[0]);
+        exblas::cpu::exdot (bm, n_dist, res, y, &h_superacc[0]);
         imin=exblas::IMIN, imax=exblas::IMAX;
         exblas::cpu::Normalize(&h_superacc[0], imin, imax);
         if (myId == 0) {
@@ -323,6 +323,7 @@ int main (int argc, char **argv) {
         size_param = atoi(argv[5]);
         stencil_points = atoi(argv[6]);
     }
+	int bm = atoi(argv[1]);
 
 /***************************************/
 
@@ -392,7 +393,6 @@ int main (int argc, char **argv) {
 
 	int i, IONE = 1;
 	double beta;
-	int bm = atoi(argv[1]);
     printf("(%d) bm: %d \n", myId, bm);
 
 	if (myId == root) {
@@ -425,7 +425,7 @@ int main (int argc, char **argv) {
 
     // ReproAllReduce -- Begin
     std::vector<int64_t> h_superacc(exblas::BIN_COUNT);
-    exblas::cpu::exdot (dimL, sol2L, sol2L, &h_superacc[0]);
+    exblas::cpu::exdot (bm, dimL, sol2L, sol2L, &h_superacc[0]);
     int imin=exblas::IMIN, imax=exblas::IMAX;
     exblas::cpu::Normalize(&h_superacc[0], imin, imax);
     if (myId == 0) {
