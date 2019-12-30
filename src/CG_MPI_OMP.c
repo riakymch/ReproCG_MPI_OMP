@@ -5,6 +5,7 @@
 #include <math.h>
 #include <mkl_blas.h>
 #include <mpi.h>
+#include <omp.h>
 #include <hb_io.h>
 #include <vector>
 
@@ -81,8 +82,10 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #endif
     bblas_dcopy(bm, n_dist, y, d);                                      // d = y
 
-    std::vector<double> fpe(2*NBFPE, 0.0);
-    std::vector<double> fpe_tol(NBFPE, 0.0);
+    //std::vector<double> fpe(2*NBFPE*omp_get_num_threads(), 0.0);
+    //std::vector<double> fpe_tol(NBFPE*omp_get_num_threads(), 0.0);
+    double *fpe = (double *) malloc(2*NBFPE*omp_get_num_threads() * sizeof(double));
+    double *fpe_tol = (double *) malloc(NBFPE*omp_get_num_threads() * sizeof(double));
     double vAux[2];
 
     // user-defined reduction operations
@@ -178,7 +181,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
             //printf ("%d \t %20.10e \n", iter, tol);
 #endif // DIRECT_ERROR
 
-        fpe = std::vector<double>(NBFPE, 0.0);
+        //fpe = std::vector<double>(NBFPE, 0.0);
         bblas_ddot(bm, n_dist, d, z, &fpe[0]);
         #pragma omp taskwait
 
@@ -208,8 +211,8 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 		alpha = beta;                                                 		        // alpha = beta
 
 #if PRECOND
-        fpe = std::vector<double>(2*NBFPE, 0.0);
-        fpe_tol = std::vector<double>(NBFPE, 0.0);
+//        fpe = std::vector<double>(2*NBFPE, 0.0);
+//        fpe_tol = std::vector<double>(NBFPE, 0.0);
         bblas_ddot(bm, n_dist, res, y, &fpe[0]);                              // beta = res' * y
         bblas_ddot(bm, n_dist, res, res, &fpe_tol[0]);                             // tol = res' * res
         #pragma omp taskwait
@@ -242,7 +245,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 
 		tol = sqrt (tol);                              									// tol = norm (res)
 #else
-        fpe = std::vector<double>(NBFPE, 0.0);
+        //fpe = std::vector<double>(NBFPE, 0.0);
         bblas_ddot(bm, n_dist, res, y, &fpe[0]);                              // beta = res' * y
         #pragma omp taskwait
 
@@ -424,7 +427,8 @@ int main (int argc, char **argv) {
 	for (i=0; i<dimL; i++)
         sol2L[i] -= 1.0;
 
-    std::vector<double> fpe(NBFPE, 0.0);
+    //std::vector<double> fpe(NBFPE*omp_get_num_threads(), 0.0);
+    double *fpe = (double *) malloc(2*NBFPE*omp_get_num_threads() * sizeof(double));
     bblas_ddot(bm, dimL, sol2L, sol2L, &fpe[0]);
 	#pragma omp taskwait
 

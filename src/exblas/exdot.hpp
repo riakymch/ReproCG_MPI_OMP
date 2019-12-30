@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
+#include <mpi.h>
 #include <iostream>
 
 #include "accumulate.h"
