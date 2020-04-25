@@ -38,7 +38,6 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 #endif
 
 	n = size; n_dist = sizeR; maxiter = size; umbral = 1.0e-8;
-    maxiter = 500;
 	CreateDoubles (&res, n_dist); CreateDoubles (&z, n_dist); 
 	CreateDoubles (&d, n_dist);  
 
@@ -323,7 +322,7 @@ int main (int argc, char **argv) {
         size_param = atoi(argv[5]);
         stencil_points = atoi(argv[6]);
     }
-	int bm = atoi(argv[1]);
+	int bm = atoi(argv[2]);
 
 /***************************************/
 
