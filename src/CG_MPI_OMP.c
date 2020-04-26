@@ -39,8 +39,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
     double *diags = NULL;
 #endif
 
-	n = size; n_dist = sizeR; maxiter = size; umbral = 1.0e-8;
-    maxiter = 500;
+	n = size; n_dist = sizeR; maxiter = 16 * size; umbral = 1.0e-8;
 	CreateDoubles (&res, n_dist); CreateDoubles (&z, n_dist); 
 	CreateDoubles (&d, n_dist);  
 
@@ -292,7 +291,7 @@ void ConjugateGradient (SparseMatrix mat, double *x, double *b, int *sizes, int 
 	if (myId == 0) {
 		printf ("Size: %d \n", n);
 		printf ("Iter: %d \n", iter);
-		printf ("Tol: %20.10e \n", tol);
+		printf ("Tol: %a \n", tol);
 		printf ("Time_loop: %20.10e\n", (t3-t1)); 
 		printf ("Time_iter: %20.10e\n", (t3-t1)/iter);
     }
@@ -396,7 +395,7 @@ int main (int argc, char **argv) {
 
 	int i, IONE = 1;
 	double beta;
-	int bm = atoi(argv[1]);
+	int bm = atoi(argv[2]);
     printf("(%d) bm: %d \n", myId, bm);
 
 	if (myId == root) {
